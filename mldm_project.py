@@ -1,11 +1,14 @@
 import pandas as pd
-import matplotlib as mpl
+import matplotlib.pyplot as mpl
 import numpy as np
 import sklearn as skl
 import numpy as np
+import seaborn as sns
 
 #lettura dataset
 dataset = pd.read_csv('ai4i2020.csv')
+
+
 
 #DATA ANALYSIS:
 #riduzione dimensionalità
@@ -29,23 +32,31 @@ one_hot = pd.get_dummies(dataset['Type'])
 dataset = dataset.drop('Type', axis=1)
 dataset = dataset.join(one_hot)
 #dataset.replace({'L': 1 << 0, 'M': 1 << 1, 'H': 1 << 2}, inplace=True)
-print(dataset.columns)
+
+
 #eventuali correlazioni tra feature
-pd.plotting.scatter_matrix(dataset.drop(['L', 'M', 'H', 'Machine failure'], axis=1, inplace=False))
-mpl.pyplot.show()
+
+pd.plotting.scatter_matrix(dataset.drop(['L', 'M', 'H', 'Machine failure'], axis=1, inplace=False), figsize=(14,22))
+mpl.show()
 #sembra esserci una correlazione tra air temperature e process temperature e infatti è così sicché process temperature è
 #calcolata a partire da air temperature e una correlazione inversa tra rotational speed e torque (infatti sono inversamente proporzionali)
-print(np.corrcoef(dataset['Air temperature [K]'], dataset['Process temperature [K]'])) #-->0.87
-print(np.corrcoef(dataset['Rotational speed [rpm]'], dataset['Torque [Nm]'])) #-->-0.87
-#banana
+
+#print(np.corrcoef(dataset['Air temperature [K]'], dataset['Process temperature [K]'])) #-->0.87
+#print(np.corrcoef(dataset['Rotational speed [rpm]'], dataset['Torque [Nm]'])) #-->-0.87
+
+mpl.figure(figsize=(16, 6))
+heatmap = sns.heatmap(dataset.drop(['L', 'M', 'H', 'Machine failure'], axis=1, inplace=False).corr(), vmin=-1, vmax=1, annot=True)
+heatmap.set_title('Correlation Heatmap')
+mpl.show()
+
 
 #visualizzazione per cercare eventuali outliers
 #Avendo i record più di 3 dimensioni, tutte importanti per individuarli, non possono essere stampati
 #Analizzo le eventuali anomalie nelle singole feature
-dataset.drop(['L', 'M', 'H', 'Machine failure'], axis=1, inplace=False).plot(subplots=True)
-mpl.pyplot.show()
-#--> non ci sono anomalie nei valori delle singole feature
 
+dataset.drop(['L', 'M', 'H', 'Machine failure'], axis=1, inplace=False).plot(subplots=True, figsize=(16,6))
+mpl.show()
+#--> non ci sono anomalie nei valori delle singole feature
 
 
 #ADDESTRAMENTO DI ALCUNI MODELLI
@@ -56,7 +67,6 @@ mpl.pyplot.show()
 #5. Bayes naive (non c'è la condizionale indipendenza tra attributi -process temperature dipende da air temperature- ma i risultati potrebbero comunque essere buoni.
 #nel caso si prova a togliere una delle due e vedere i risultati)
 #6. eventuali altri modelli...
-
 
 
 
