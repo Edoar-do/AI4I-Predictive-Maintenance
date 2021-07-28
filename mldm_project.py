@@ -37,7 +37,7 @@ mpl.pyplot.show()
 #calcolata a partire da air temperature e una correlazione inversa tra rotational speed e torque (infatti sono inversamente proporzionali)
 print(np.corrcoef(dataset['Air temperature [K]'], dataset['Process temperature [K]'])) #-->0.87
 print(np.corrcoef(dataset['Rotational speed [rpm]'], dataset['Torque [Nm]'])) #-->-0.87
-
+#banana
 
 #visualizzazione per cercare eventuali outliers
 #Avendo i record più di 3 dimensioni, tutte importanti per individuarli, non possono essere stampati
