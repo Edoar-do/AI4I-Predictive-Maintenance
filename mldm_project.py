@@ -100,57 +100,59 @@ def save_fig(fig_id, tight_layout=True, fig_extension="png", resolution=300):
 
 np.random.seed(42)
 
+def decision_tree(dataset):
+
 # draw tree
 
-def draw_tree(filename, tree, feature_names, class_names):
-    export_graphviz(
-            tree,
-            out_file=os.path.join(IMAGES_PATH, filename),
-            feature_names=feature_names,
-            class_names=class_names,
-            rounded=True,
-            filled=True
-            )
+    def draw_tree(filename, tree, feature_names, class_names):
+        export_graphviz(
+                tree,
+                out_file=os.path.join(IMAGES_PATH, filename),
+                feature_names=feature_names,
+                class_names=class_names,
+                rounded=True,
+                filled=True
+                )
 
-    Source.from_file(os.path.join(IMAGES_PATH, filename)).render(view = True)
+        Source.from_file(os.path.join(IMAGES_PATH, filename)).render(view = True)
 
 # Costruisco il dataset negli input e nei target che serviranno per l'addestramento
 
-dataset.drop(['L', 'M', 'H'], axis = 1, inplace = True) # non venivano mai considerati nell'albero (ce ne siamo accorti dopo alcune prove)
-X = dataset.iloc[:, :-1]
-Y = dataset.iloc[:, -1]
+    dataset.drop(['L', 'M', 'H'], axis = 1, inplace = True) # non venivano mai considerati nell'albero (ce ne siamo accorti dopo alcune prove)
+    X = dataset.iloc[:, :-1]
+    Y = dataset.iloc[:, -1]
 
 # split data
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size = 0.65, random_state = 42)
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size = 0.65, random_state = 42)
 
 # albero di decisione 
 
 # euristica per i pesi dato lo sbilanciamento del dataset
 
-nonfailure_count, failure_count = dataset.groupby('Machine failure').size()
-ratio = nonfailure_count / failure_count
-weights = {0: 1.0, 1: ratio}
+    nonfailure_count, failure_count = dataset.groupby('Machine failure').size()
+    ratio = nonfailure_count / failure_count
+    weights = {0: 1.0, 1: ratio}
 
 # search with grid_search_cv
 
-params = {'min_samples_leaf': [30, 40, 50]}
-cv = RepeatedStratifiedKFold(n_splits = 10, n_repeats = 3, random_state = 42)
-grid_search_cv = GridSearchCV(DecisionTreeClassifier(max_depth = 4, class_weight = weights, criterion = 'entropy', random_state=42), params, verbose=1, cv = cv, scoring='f1_weighted')
-grid_search_cv.fit(X_train, Y_train)
-draw_tree("tree_pm_grid_search.dot", grid_search_cv.best_estimator_, dataset.columns.values[:-1], ['Non rotto', 'Rotto'])
+    params = {'min_samples_leaf': [30, 40, 50]}
+    cv = RepeatedStratifiedKFold(n_splits = 10, n_repeats = 3, random_state = 42)
+    grid_search_cv = GridSearchCV(DecisionTreeClassifier(max_depth = 4, class_weight = weights, criterion = 'entropy', random_state=42), params, verbose=1, cv = cv, scoring='f1_weighted')
+    grid_search_cv.fit(X_train, Y_train)
+    draw_tree("tree_pm_grid_search.dot", grid_search_cv.best_estimator_, dataset.columns.values[:-1], ['Non rotto', 'Rotto'])
 
 # test prestazioni
 
-Y_pred = grid_search_cv.predict(X_test)
-print('Accuracy score of decisione tree: ', accuracy_score(Y_test, Y_pred))
-print('Best params after grid search applied to decision tree: ', grid_search_cv.best_params_)
+    Y_pred = grid_search_cv.predict(X_test)
+    print('Accuracy score of decisione tree: ', accuracy_score(Y_test, Y_pred))
+    print('Best params after grid search applied to decision tree: ', grid_search_cv.best_params_)
 
 
-tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
-print("TrueNegative: %d" % tn)
-print("FalsePostive: %d" % fp)
-print("FalseNegative: %d" % fn)
-print("TruePositive: %d" % tp)
+    tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
+    print("TrueNegative: %d" % tn)
+    print("FalsePostive: %d" % fp)
+    print("FalseNegative: %d" % fn)
+    print("TruePositive: %d" % tp)
 
 
 # I nostri risultati per l'albero di decisione sono:
@@ -162,3 +164,23 @@ print("TruePositive: %d" % tp)
 # Questo ci ha permesso di determinare in maniera automatica alcuni degli iperparametri.
 # L'accuracy score è circa di 0.89.
 # fn e tp erano circa 5 e 100, quindi un risultato buono considerando quanto è sbilanciato il dataset.
+
+# Support vector machines
+
+from sklearn.svm import SVC
+from sklearn.svm import LinearSVC
+
+def support_vector_machines(dataset):
+    # prepara test e training data
+    X = dataset.iloc[:, :-1]
+    Y = dataset.iloc[:, -1]
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size = 0.65, random_state = 42)
+
+    tuned_parameters = [{'C': [0.01, 0.1, 1, 10, 100],
+                         'gamma': [0.5, 1,2,3,4]}]
+    cv = RepeatedStratifiedKFold(n_splits = 10, n_repeats = 3, random_state = 42)
+    clf = GridSearchCV(SVC(kernel='rbf'), tuned_parameters, cv=10, scoring='accuracy')
+    clf.fit(X_train, Y_train)
+    print(clf.best_params_)
+
+support_vector_machines(dataset)
