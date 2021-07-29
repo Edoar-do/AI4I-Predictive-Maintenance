@@ -1,3 +1,4 @@
+#IMPORTAZIONI VARIE
 import sys
 import pandas as pd
 import matplotlib as mpl
@@ -6,12 +7,21 @@ import numpy as np
 import sklearn as skl
 import numpy as np
 import seaborn as sns
+from graphviz import Source
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.metrics import confusion_matrix, mean_squared_error
+from sklearn.datasets import load_iris
+from sklearn.tree import DecisionTreeClassifier, export_graphviz
+import os
+from sklearn.model_selection import GridSearchCV, RepeatedStratifiedKFold
+from sklearn.metrics import accuracy_score
 
-#lettura dataset
+#LETTURA DATASET
 dataset = pd.read_csv('ai4i2020.csv')
 
 #DATA ANALYSIS:
-#riduzione dimensionalità
+#riduzione dimensionalità: tolgo feature inutili in partenza per gli scopi del progetto
 dataset.drop("Product ID", axis=1, inplace=True)
 dataset.drop("UDI", axis=1, inplace=True)
 dataset.drop("TWF", axis=1, inplace=True)
@@ -37,8 +47,7 @@ dataset = dataset.join(last)
 #last.replace({1: 'rotto', 0: 'non rotto'}, inplace=True)
 
 
-#eventuali correlazioni tra feature
-
+#CORRELAZIONI TRA FEATURE
 pd.plotting.scatter_matrix(dataset.drop(['L', 'M', 'H', 'Machine failure'], axis=1, inplace=False), figsize=(14,22))
 plt.show()
 #sembra esserci una correlazione tra air temperature e process temperature e infatti è così sicché process temperature è
@@ -61,7 +70,14 @@ dataset.drop(['L', 'M', 'H', 'Machine failure'], axis=1, inplace=False).plot(sub
 plt.show()
 #--> non ci sono anomalie nei valori delle singole feature
 
-#ADDESTRAMENTO DI ALCUNI MODELLI
+
+#############################################
+
+#INSERIRE QUI CHIAMATE A FUNZIONI CHE SI OCCUPANO DELL'ADDESTRAMENTO E DELLA VALUTAZIONI DELLE PRESTAZIONI DI TUTTI I MODELLI. (QUESTIONE DI ORDINE (MENTALE ANCHE))
+
+
+# ADDESTRAMENTO DI ALCUNI MODELLI
+
 #1. Albero di decisione
 #2. Rete neurale
 #3. SVM
@@ -70,15 +86,6 @@ plt.show()
 #nel caso si prova a togliere una delle due e vedere i risultati)
 #6. eventuali altri modelli...
 
-from graphviz import Source
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.metrics import confusion_matrix, mean_squared_error
-
-from sklearn.datasets import load_iris
-from sklearn.tree import DecisionTreeClassifier, export_graphviz
-
-import os
 
 PROJECT_ROOT_DIR = "."
 IMAGES_PATH = os.path.join(PROJECT_ROOT_DIR, "images")
@@ -107,8 +114,9 @@ def draw_tree(filename, tree, feature_names, class_names):
 
     Source.from_file(os.path.join(IMAGES_PATH, filename)).render(view = True)
 
-# get data
-dataset.drop(['L', 'M', 'H'], axis = 1, inplace = True) # non venivano mai considerati nell'albero
+# Costruisco il dataset negli input e nei target che serviranno per l'addestramento
+
+dataset.drop(['L', 'M', 'H'], axis = 1, inplace = True) # non venivano mai considerati nell'albero (ce ne siamo accorti dopo alcune prove)
 X = dataset.iloc[:, :-1]
 Y = dataset.iloc[:, -1]
 
@@ -117,13 +125,13 @@ X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size = 0.65, ran
 
 # albero di decisione 
 
-# euristica per i pesi
+# euristica per i pesi dato lo sbilanciamento del dataset
+
 nonfailure_count, failure_count = dataset.groupby('Machine failure').size()
 ratio = nonfailure_count / failure_count
 weights = {0: 1.0, 1: ratio}
 
 # search with grid_search_cv
-from sklearn.model_selection import GridSearchCV, RepeatedStratifiedKFold
 
 params = {'min_samples_leaf': [30, 40, 50]}
 cv = RepeatedStratifiedKFold(n_splits = 10, n_repeats = 3, random_state = 42)
@@ -133,25 +141,24 @@ draw_tree("tree_pm_grid_search.dot", grid_search_cv.best_estimator_, dataset.col
 
 # test prestazioni
 
-from sklearn.metrics import accuracy_score
-
 Y_pred = grid_search_cv.predict(X_test)
-print(accuracy_score(Y_test, Y_pred))
-print(grid_search_cv.best_params_)
+print('Accuracy score of decisione tree: ', accuracy_score(Y_test, Y_pred))
+print('Best params after grid search applied to decision tree: ', grid_search_cv.best_params_)
 
 
 tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
-print("TN: %d" % tn)
-print("FP: %d" % fp)
-print("FN: %d" % fn)
-print("TP: %d" % tp)
+print("TrueNegative: %d" % tn)
+print("FalsePostive: %d" % fp)
+print("FalseNegative: %d" % fn)
+print("TruePositive: %d" % tp)
 
 
-# I nostri risultati sono:
-# Il dataset è fortemente sbilanciato a favore delle istanze negative (circa il 3.39 % delle istanze sono positive).
+# I nostri risultati per l'albero di decisione sono:
+# Il dataset è fortemente sbilanciato a favore delle istanze negative (il 3.39 % delle istanze sono positive).
 # Per questo motivo, abbiamo deciso di pesare i dati di input (utilizzando come euristica per i pesi il rapporto tra il 
-# numero di istanze negative e il numero di istanze positive) e una score f2.
-# Dopodiché abbiamo usato GridSearchCV passando come parametro GridSearchCV per la crossvalidazione. Questo ci ha permesso
-# di determinare in maniera automatica alcuni degli iperparametri.
+# numero di istanze negative e il numero di istanze positive). Inoltre abbiamo utilizzato una score F2 per dare maggiore importanza ai falsi negativi, problema grave in ambito industriale
+# e di manutenzione predittiva
+# Dopodiché abbiamo usato RepeteadStratifiedKFold passato come parametro a una GridSearchCV per la crossvalidazione a caccia della migliore configurazione possibile di iperparametri
+# Questo ci ha permesso di determinare in maniera automatica alcuni degli iperparametri.
 # L'accuracy score è circa di 0.89.
 # fn e tp erano circa 5 e 100, quindi un risultato buono considerando quanto è sbilanciato il dataset.
