@@ -17,6 +17,9 @@ from sklearn.model_selection import GridSearchCV, RepeatedStratifiedKFold
 from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC
 from sklearn.svm import LinearSVC
+from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import ComplementNB
+from sklearn.preprocessing import StandardScaler
 
 #os.environ["PATH"] += os.pathsep + 'C:/Utenti/jed/Anaconda3/envs/keras/Library/bin/graphviz/'
 #LETTURA DATASET
@@ -95,6 +98,14 @@ def save_fig(fig_id, tight_layout=True, fig_extension="png", resolution=300):
 
 np.random.seed(42)
 
+def train_test_split_standard_scaler(X, Y, train_size, random_state):
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size=0.65, random_state=42)
+    scaler = StandardScaler() 
+    scaler.fit(X_train)  
+    X_train = scaler.transform(X_train)  
+    X_test = scaler.transform(X_test)
+    return (X_train, X_test, Y_train, Y_test)
+
 def decision_treeWeighted(dataset):
 
     # draw tree
@@ -118,7 +129,7 @@ def decision_treeWeighted(dataset):
     Y = dataset.iloc[:, -1]
 
     # split data
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size = 0.65, random_state = 42)
+    X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size = 0.65, random_state = 42)
 
     # albero di decisione
     # euristica per i pesi dato lo sbilanciamento del dataset
@@ -147,7 +158,7 @@ def svm_weighted(dataset):
     Y = dataset.iloc[:, -1]
 
     # split data
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size=0.65, random_state=42)
+    X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
 
     # euristica per i pesi dato lo sbilanciamento del dataset
 
@@ -167,7 +178,7 @@ def svm_sampling(dataset):
     dataset = dataset.drop(['L', 'M', 'H'], axis=1)
     X = dataset.iloc[:, :-1]
     Y = dataset.iloc[:, -1]
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size=0.65, random_state=42)
+    X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
 
     svm = SVC(kernel='rbf', C=float('inf'), gamma=1, class_weight='balanced', random_state=42)
     over = SMOTE(sampling_strategy=0.45, random_state=42)
@@ -190,7 +201,7 @@ def decisionTree_sampling(dataset):
     dataset = dataset.drop(['L', 'M', 'H'], axis=1)
     X = dataset.iloc[:, :-1]
     Y = dataset.iloc[:, -1]
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size=0.65, random_state=42)
+    X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
 
 
     tree = DecisionTreeClassifier(criterion='entropy', max_depth=4, min_samples_leaf=30, class_weight='balanced')
@@ -220,7 +231,7 @@ def randomForest_weighted(dataset):
     Y = dataset.iloc[:, -1]
 
     # split data
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size=0.65, random_state=42)
+    X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
 
     randomForest = RandomForestClassifier(n_jobs=-1, criterion='entropy', n_estimators=1000, class_weight='balanced_subsample',
                                          random_state=42, max_samples=0.5, max_leaf_nodes=16)
@@ -241,7 +252,7 @@ def samples_randomForest(dataset):
     Y = dataset.iloc[:, -1]
 
     # split data
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size=0.65, random_state=42)
+    X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
 
     randomForest = RandomForestClassifier(n_jobs=-1, criterion='entropy', n_estimators=1000,random_state=42,
                                           max_samples=0.5, max_leaf_nodes=16, class_weight='balanced_subsample')
@@ -287,7 +298,7 @@ def decisionTreeWithMostImportantFeature(dataset):
     Y = dataset.iloc[:, -1]
 
     # split data
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, train_size=0.65, random_state=42)
+    X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
 
     # albero di decisione
     # euristica per i pesi dato lo sbilanciamento del dataset
@@ -311,25 +322,69 @@ def decisionTreeWithMostImportantFeature(dataset):
     # grazie alla random forest con samples abbiamo trovato le feature più importanti e adesso le abbiamo usate per allenare un modello semplicissimo come un albero
     # per vedere se ci sono stati miglioramenti delle prestazioni e così è stato.
 
+def gaussian_naive(dataset):
+    dataset = dataset.drop(['L', 'M', 'H'], axis=1)  # non venivano mai considerati nell'albero (ce ne siamo accorti dopo alcune prove)
+    X = dataset.iloc[:, :-1]
+    Y = dataset.iloc[:, -1]
 
-# print('SVM PESATO')
-# svm_weighted(dataset)
-# print()
-# print('SVM CON SAMPLING')
-# svm_sampling(dataset)
-# print()
-# print('DECISION TREE PESATO')
-# decision_treeWeighted(dataset)
-# print()
-# print('DECISION TREE WITH SAMPLING')
-# decisionTree_sampling(dataset)
-# print()
-# print('random forest pesata')
-# randomForest_weighted(dataset)
-# print()
-# print('random forest sampling')
-# samples_randomForest(dataset)
-# print()
-# print('most important features weightede decision tree')
-# decisionTreeWithMostImportantFeature(dataset)
-# print()
+    # split data
+    X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
+
+    naive = GaussianNB()
+    dizionario = cross_validate(naive, X_train, Y_train, cv=5, n_jobs=-1, scoring='recall', return_estimator=True)
+
+    Y_pred = dizionario['estimator'][0].predict(X_test)
+    tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
+    print("TrueNegative: %d" % tn)
+    print("FalsePostive: %d" % fp)
+    print("FalseNegative: %d" % fn)
+    print("TruePositive: %d" % tp)
+
+def gaussian_naive_sampling(dataset):
+    dataset = dataset.drop(['L', 'M', 'H'], axis=1)
+    X = dataset.iloc[:, :-1]
+    Y = dataset.iloc[:, -1]
+    X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
+
+    naive = GaussianNB()
+    over = SMOTE(sampling_strategy=0.45, random_state=42)
+    under = RandomUnderSampler(sampling_strategy=0.5, random_state=42)
+    X_train, Y_train = over.fit_resample(X_train, Y_train)
+    X_train, Y_train = under.fit_resample(X_train, Y_train)
+
+    dizionario = cross_validate(naive, X_train, Y_train, cv=5, n_jobs=-1, scoring='recall', return_estimator=True)
+
+    Y_pred = dizionario['estimator'][0].predict(X_test)
+    tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
+    print("TrueNegative: %d" % tn)
+    print("FalsePostive: %d" % fp)
+    print("FalseNegative: %d" % fn)
+    print("TruePositive: %d" % tp)
+
+print('SVM PESATO')
+svm_weighted(dataset)
+print()
+print('SVM CON SAMPLING')
+svm_sampling(dataset)
+print()
+print('DECISION TREE PESATO')
+decision_treeWeighted(dataset)
+print()
+print('DECISION TREE WITH SAMPLING')
+decisionTree_sampling(dataset)
+print()
+print('random forest pesata')
+randomForest_weighted(dataset)
+print()
+print('random forest sampling')
+samples_randomForest(dataset)
+print()
+print('most important features weightede decision tree')
+decisionTreeWithMostImportantFeature(dataset)
+print()
+print("Naive bayes gaussian")
+gaussian_naive(dataset)
+print()
+print("Naive bayes gaussian sampling")
+gaussian_naive_sampling(dataset)
+print()
