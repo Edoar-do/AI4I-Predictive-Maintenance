@@ -24,7 +24,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 
-enable_drawing = True
+enable_tree_drawing = True
 
 #os.environ["PATH"] += os.pathsep + 'C:/Utenti/jed/Anaconda3/envs/keras/Library/bin/graphviz/'
 #LETTURA DATASET
