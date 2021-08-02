@@ -20,6 +20,9 @@ from sklearn.svm import LinearSVC
 from sklearn.naive_bayes import GaussianNB
 from sklearn.naive_bayes import ComplementNB
 from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPClassifier
+from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split
 
 #os.environ["PATH"] += os.pathsep + 'C:/Utenti/jed/Anaconda3/envs/keras/Library/bin/graphviz/'
 #LETTURA DATASET
@@ -163,7 +166,8 @@ def svm_weighted(dataset):
     # euristica per i pesi dato lo sbilanciamento del dataset
 
     svm = SVC(kernel='rbf', C=float('inf'), gamma=1, class_weight='balanced', random_state=42)
-    dizionario = cross_validate(svm, X_train, Y_train, cv=5, n_jobs=-1, scoring='recall', return_estimator=True)
+    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    dizionario = cross_validate(svm, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
     tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
@@ -185,8 +189,8 @@ def svm_sampling(dataset):
     under = RandomUnderSampler(sampling_strategy=0.5, random_state=42)
     X_train, Y_train = over.fit_resample(X_train, Y_train)
     X_train, Y_train = under.fit_resample(X_train, Y_train)
-
-    dizionario = cross_validate(svm, X_train, Y_train, cv=5, n_jobs=-1, scoring='recall', return_estimator=True)
+    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    dizionario = cross_validate(svm, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
     tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
@@ -211,7 +215,8 @@ def decisionTree_sampling(dataset):
     pipeline = Pipeline(steps=steps)
 
     #scores = cross_val_score(pipeline, X_train, Y_train, cv=5, n_jobs=-1, scoring='roc_auc')
-    dizionario = cross_validate(pipeline, X_train, Y_train, cv=5, n_jobs=-1, scoring='recall', return_estimator=True)
+    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    dizionario = cross_validate(pipeline, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
     tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
@@ -235,7 +240,8 @@ def randomForest_weighted(dataset):
 
     randomForest = RandomForestClassifier(n_jobs=-1, criterion='entropy', n_estimators=1000, class_weight='balanced_subsample',
                                          random_state=42, max_samples=0.5, max_leaf_nodes=16)
-    dizionario = cross_validate(randomForest, X_train, Y_train, cv=5, n_jobs=-1, scoring='recall', return_estimator=True)
+    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    dizionario = cross_validate(randomForest, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
     tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
@@ -261,7 +267,8 @@ def samples_randomForest(dataset):
     X_train, Y_train = over.fit_resample(X_train, Y_train)
     X_train, Y_train = under.fit_resample(X_train, Y_train)
 
-    dizionario = cross_validate(randomForest, X_train, Y_train, cv=5, n_jobs=-1, scoring='recall', return_estimator=True)
+    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    dizionario = cross_validate(randomForest, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
     tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
@@ -269,6 +276,8 @@ def samples_randomForest(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
+    print()
+    print('FEATURE IMPORTANCE')
 
     for name, score in zip(dataset.columns, dizionario['estimator'][0].feature_importances_):
         print(name, score)
@@ -309,7 +318,8 @@ def decisionTreeWithMostImportantFeature(dataset):
 
     tree = DecisionTreeClassifier(max_depth=4, class_weight='balanced', criterion='entropy', random_state=42,
                                   min_samples_leaf=30)
-    dizionario = cross_validate(tree, X_train, Y_train, cv=5, n_jobs=-1, scoring='recall', return_estimator=True)
+    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    dizionario = cross_validate(tree, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
     tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
@@ -331,7 +341,8 @@ def gaussian_naive(dataset):
     X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
 
     naive = GaussianNB()
-    dizionario = cross_validate(naive, X_train, Y_train, cv=5, n_jobs=-1, scoring='recall', return_estimator=True)
+    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    dizionario = cross_validate(naive, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
     tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
@@ -351,8 +362,8 @@ def gaussian_naive_sampling(dataset):
     under = RandomUnderSampler(sampling_strategy=0.5, random_state=42)
     X_train, Y_train = over.fit_resample(X_train, Y_train)
     X_train, Y_train = under.fit_resample(X_train, Y_train)
-
-    dizionario = cross_validate(naive, X_train, Y_train, cv=5, n_jobs=-1, scoring='recall', return_estimator=True)
+    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    dizionario = cross_validate(naive, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
     tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
@@ -360,6 +371,29 @@ def gaussian_naive_sampling(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
+
+def reteNeurale(dataset):
+    dataset = dataset.drop(['L', 'M', 'H'], axis=1)
+    X = dataset.iloc[:, :-1]
+    Y = dataset.iloc[:, -1]
+    X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.75, random_state=42)
+
+    over = SMOTE(sampling_strategy=0.45, random_state=42)
+    under = RandomUnderSampler(sampling_strategy=0.5, random_state=42)
+    X_train, Y_train = over.fit_resample(X_train, Y_train)
+    X_train, Y_train = under.fit_resample(X_train, Y_train)
+
+    ann = MLPClassifier(solver='adam', validation_fraction=0.25, early_stopping=True, activation='relu', learning_rate='adaptive', n_iter_no_change=10,  random_state=42, alpha=1e-6, max_iter=500)
+    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    dizionario = cross_validate(ann, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
+
+    Y_pred = dizionario['estimator'][0].predict(X_test)
+    tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
+    print("TrueNegative: %d" % tn)
+    print("FalsePostive: %d" % fp)
+    print("FalseNegative: %d" % fn)
+    print("TruePositive: %d" % tp)
+
 
 print('SVM PESATO')
 svm_weighted(dataset)
@@ -373,18 +407,21 @@ print()
 print('DECISION TREE WITH SAMPLING')
 decisionTree_sampling(dataset)
 print()
-print('random forest pesata')
+print('RANDOM FOREST PESATA')
 randomForest_weighted(dataset)
 print()
-print('random forest sampling')
+print('RANDOM FOREST WITH SAMPLING')
 samples_randomForest(dataset)
 print()
-print('most important features weightede decision tree')
+print('MOST IMPORTANT FEATURE WEIGHTED DECISION TREE')
 decisionTreeWithMostImportantFeature(dataset)
 print()
-print("Naive bayes gaussian")
+print("nAIVE BAYES GAUSSIAN CLASSIFIER")
 gaussian_naive(dataset)
 print()
-print("Naive bayes gaussian sampling")
+print("NAIVE BAYES GAUSSIAN CLASSIFIER WITH SAMPLING")
 gaussian_naive_sampling(dataset)
+print()
+print('ARITIFICIAL NEURAL NETWORK')
+reteNeurale(dataset)
 print()
