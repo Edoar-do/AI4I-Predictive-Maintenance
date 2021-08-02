@@ -7,7 +7,7 @@ import seaborn as sns
 from graphviz import Source
 from sklearn.model_selection import train_test_split, cross_val_score, cross_validate
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, BaggingClassifier, RandomForestClassifier
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, plot_confusion_matrix
 from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.pipeline import Pipeline
@@ -94,10 +94,6 @@ PROJECT_ROOT_DIR = "."
 IMAGES_PATH = os.path.join(PROJECT_ROOT_DIR, "images")
 os.makedirs(IMAGES_PATH, exist_ok=True)
 
-def plotConfusionMatrix(confusionMatrix, title):
-    sns.heatmap(confusionMatrix, annot=True, fmt='g')
-    plt.title(title)
-    plt.show()
 
 def save_fig(fig_id, tight_layout=True, fig_extension="png", resolution=300):
     path = os.path.join(IMAGES_PATH, fig_id + "." + fig_extension)
@@ -159,7 +155,9 @@ def decision_treeWeighted(dataset):
     if enable_drawing:
         draw_tree("tree-weighted", dizionario['estimator'][0], dataset)
 
-    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix Weighted Decision Tree')
+    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+    plt.title('Confusion Matrix Weighted Tree')
+    plt.show()
 
     #Risultati ottenuti con cross validazione del modello (PESATO) e calcolo delle prestazioni con matrice di confusione su dati di testing precedentemente separati:
     #Recall circa del 5.7% (sui valori '1') -> valore non eccezionale dato il contesto industriale
@@ -185,7 +183,11 @@ def svm_weighted(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix Weighted SVM')
+
+    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+    plt.title('Confusion Matrix Weighted SVM')
+    plt.show()
+
 
     #recall=0 e specificity=3394/3395 -> risultati non accettabili
 
@@ -209,7 +211,9 @@ def svm_sampling(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix SVM with sampling')
+    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+    plt.title('Confusion Matrix SVM with Sampling')
+    plt.show()
 
     # recall = 2/105 e specificity = 3391/3395 -> risultati terribilmente non accettabili
 
@@ -234,7 +238,9 @@ def decisionTree_sampling(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix Decision Tree with sampling')
+    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+    plt.title('Confusion Matrix Decision Tree with sampling')
+    plt.show()
 
     if enable_drawing:
         draw_tree("tree-sampling", dizionario['estimator'][0], dataset)
@@ -262,7 +268,9 @@ def randomForest_weighted(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix Weighted Random Forest')
+    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+    plt.title('Confusion Matrix Weighted Random Forest')
+    plt.show()
 
     #recall 10/105, specificity=3118/3118+277
 
@@ -291,12 +299,17 @@ def samples_randomForest(dataset):
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
 
-    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix Random Forest with Sampling')
+    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+    plt.title('Confusion Matrix Random Forest with sampling')
+    plt.show()
     print()
     print('FEATURE IMPORTANCE')
 
     for name, score in zip(dataset.columns, dizionario['estimator'][0].feature_importances_):
         print(name, score)
+
+    plt.hist(dataset.columns, dizionario['estimator'][0].feature_importances_ )
+    plt.show()
 
     #recall = 5/105, specificity=3039/3039+356 MODELLO MIGLIORE MAI VISTO!!!!
     #The “balanced_subsample” mode is the same as “balanced” except that weights are computed based on the bootstrap sample for every tree grown.
@@ -329,7 +342,9 @@ def decisionTreeWithMostImportantFeature(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix Decision Tree Most Important Features')
+    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+    plt.title('Confusion Matrix Decision Tree with most important features')
+    plt.show()
 
     if enable_drawing:
         draw_tree("most-important", dizionario['estimator'][0], dataset)
@@ -356,7 +371,9 @@ def gaussian_naive(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matirx Gaussian Naive Bayes')
+    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+    plt.title('Confusion Matrix Gaussian Naive Bayes')
+    plt.show()
 
 def gaussian_naive_sampling(dataset):
     dataset = dataset.drop(['L', 'M', 'H'], axis=1)
@@ -378,7 +395,9 @@ def gaussian_naive_sampling(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix Gaussian Naive Bayes with sampling')
+    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+    plt.title('Confusion Matrix Gaussian Naive Bayes with sampling')
+    plt.show()
 
 def reteNeurale(dataset):
     dataset = dataset.drop(['L', 'M', 'H'], axis=1)
@@ -401,7 +420,9 @@ def reteNeurale(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix ANN')
+    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+    plt.title('Confusion Matrix ANN')
+    plt.show()
 
 
 print('SVM PESATO')
