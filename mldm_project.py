@@ -24,6 +24,8 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 
+enable_drawing = True
+
 #os.environ["PATH"] += os.pathsep + 'C:/Utenti/jed/Anaconda3/envs/keras/Library/bin/graphviz/'
 #LETTURA DATASET
 dataset = pd.read_csv('ai4i2020.csv')
@@ -99,6 +101,20 @@ def save_fig(fig_id, tight_layout=True, fig_extension="png", resolution=300):
         plt.tight_layout()
     plt.savefig(path, format=fig_extension, dpi=resolution)
 
+def draw_tree(filename, tree, dataset):
+    feature_names = dataset.columns.values[:-1]
+    class_names = ['Non rotto', 'Rotto']
+    export_graphviz(
+        tree,
+        out_file=os.path.join(IMAGES_PATH, filename),
+        feature_names=feature_names,
+        class_names=class_names,
+        rounded=True,
+        filled=True
+    )
+
+    Source.from_file(os.path.join(IMAGES_PATH, filename)).render(view=True)
+
 np.random.seed(42)
 
 def train_test_split_standard_scaler(X, Y, train_size, random_state):
@@ -110,21 +126,6 @@ def train_test_split_standard_scaler(X, Y, train_size, random_state):
     return (X_train, X_test, Y_train, Y_test)
 
 def decision_treeWeighted(dataset):
-
-    # draw tree
-
-    def draw_tree(filename, tree, feature_names, class_names):
-        export_graphviz(
-                tree,
-                out_file=os.path.join(IMAGES_PATH, filename),
-                feature_names=feature_names,
-                class_names=class_names,
-                rounded=True,
-                filled=True
-                )
-
-        Source.from_file(os.path.join(IMAGES_PATH, filename)).render(view = True)
-
     # Costruisco il dataset negli input e nei target che serviranno per l'addestramento
 
     dataset = dataset.drop(['L', 'M', 'H'], axis = 1) # non venivano mai considerati nell'albero (ce ne siamo accorti dopo alcune prove)
@@ -150,6 +151,8 @@ def decision_treeWeighted(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
+    if enable_drawing:
+        draw_tree("tree-weighted", dizionario['estimator'][0], dataset)
 
     #Risultati ottenuti con cross validazione del modello (PESATO) e calcolo delle prestazioni con matrice di confusione su dati di testing precedentemente separati:
     #Recall circa del 5.7% (sui valori '1') -> valore non eccezionale dato il contesto industriale
@@ -211,12 +214,10 @@ def decisionTree_sampling(dataset):
     tree = DecisionTreeClassifier(criterion='entropy', max_depth=4, min_samples_leaf=30, class_weight='balanced')
     over = SMOTE(sampling_strategy=0.45, random_state=42)
     under = RandomUnderSampler(sampling_strategy=0.5, random_state=42)
-    steps = [('o', over), ('u', under), ('model', tree)]
-    pipeline = Pipeline(steps=steps)
-
-    #scores = cross_val_score(pipeline, X_train, Y_train, cv=5, n_jobs=-1, scoring='roc_auc')
+    X_train, Y_train = over.fit_resample(X_train, Y_train)
+    X_train, Y_train = under.fit_resample(X_train, Y_train)
     cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
-    dizionario = cross_validate(pipeline, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
+    dizionario = cross_validate(tree, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
     tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
@@ -225,6 +226,8 @@ def decisionTree_sampling(dataset):
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
 
+    if enable_drawing:
+        draw_tree("tree-sampling", dizionario['estimator'][0], dataset)
     # Risultati ottenuti con cross validazione del modello allenato su over e undersampling e calcolo delle prestazioni con matrice di confusione su dati di testing precedentemente separati:
     # Recall circa del 8.6% (sui valori '1') -> valore non eccezionale dato il contesto industriale
     # Specificity circa del 9.2%
@@ -286,20 +289,6 @@ def samples_randomForest(dataset):
     #The “balanced_subsample” mode is the same as “balanced” except that weights are computed based on the bootstrap sample for every tree grown.
 
 def decisionTreeWithMostImportantFeature(dataset):
-    # draw tree
-
-    def draw_tree(filename, tree, feature_names, class_names):
-        export_graphviz(
-            tree,
-            out_file=os.path.join(IMAGES_PATH, filename),
-            feature_names=feature_names,
-            class_names=class_names,
-            rounded=True,
-            filled=True
-        )
-
-        Source.from_file(os.path.join(IMAGES_PATH, filename)).render(view=True)
-
     # Costruisco il dataset negli input e nei target che serviranno per l'addestramento
 
     dataset = dataset.drop(['L', 'M', 'H', 'Air temperature [K]', 'Process temperature [K]'],axis=1)  # non venivano mai considerati nell'albero (ce ne siamo accorti dopo alcune prove)
@@ -309,12 +298,12 @@ def decisionTreeWithMostImportantFeature(dataset):
     # split data
     X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
 
-    # albero di decisione
+    # albero d) decisione
     # euristica per i pesi dato lo sbilanciamento del dataset
 
     # nonfailure_count, failure_count = dataset.groupby('Machine failure').size()
     # ratio = nonfailure_count / failure_count
-    # weights = {0: 1.0, 1: ratio}
+    # weights ="{0: 1.0, 1: ratio}
 
     tree = DecisionTreeClassifier(max_depth=4, class_weight='balanced', criterion='entropy', random_state=42,
                                   min_samples_leaf=30)
@@ -327,6 +316,8 @@ def decisionTreeWithMostImportantFeature(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
+    if enable_drawing:
+        draw_tree("most-important", dizionario['estimator'][0], dataset)
 
     # recall=3.81%, specificity=17.67%
     # grazie alla random forest con samples abbiamo trovato le feature più importanti e adesso le abbiamo usate per allenare un modello semplicissimo come un albero
@@ -416,7 +407,7 @@ print()
 print('MOST IMPORTANT FEATURE WEIGHTED DECISION TREE')
 decisionTreeWithMostImportantFeature(dataset)
 print()
-print("nAIVE BAYES GAUSSIAN CLASSIFIER")
+print("NAIVE BAYES GAUSSIAN CLASSIFIER")
 gaussian_naive(dataset)
 print()
 print("NAIVE BAYES GAUSSIAN CLASSIFIER WITH SAMPLING")
