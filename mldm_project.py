@@ -24,7 +24,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 
-enable_tree_drawing = True
+enable_drawing = False
 
 #os.environ["PATH"] += os.pathsep + 'C:/Utenti/jed/Anaconda3/envs/keras/Library/bin/graphviz/'
 #LETTURA DATASET
@@ -94,6 +94,11 @@ PROJECT_ROOT_DIR = "."
 IMAGES_PATH = os.path.join(PROJECT_ROOT_DIR, "images")
 os.makedirs(IMAGES_PATH, exist_ok=True)
 
+def plotConfusionMatrix(confusionMatrix, title):
+    sns.heatmap(confusionMatrix, annot=True, fmt='g')
+    plt.title(title)
+    plt.show()
+
 def save_fig(fig_id, tight_layout=True, fig_extension="png", resolution=300):
     path = os.path.join(IMAGES_PATH, fig_id + "." + fig_extension)
     print("Saving figure", fig_id)
@@ -154,6 +159,8 @@ def decision_treeWeighted(dataset):
     if enable_drawing:
         draw_tree("tree-weighted", dizionario['estimator'][0], dataset)
 
+    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix Weighted Decision Tree')
+
     #Risultati ottenuti con cross validazione del modello (PESATO) e calcolo delle prestazioni con matrice di confusione su dati di testing precedentemente separati:
     #Recall circa del 5.7% (sui valori '1') -> valore non eccezionale dato il contesto industriale
     #Specificity circa del 9.34
@@ -178,6 +185,7 @@ def svm_weighted(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
+    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix Weighted SVM')
 
     #recall=0 e specificity=3394/3395 -> risultati non accettabili
 
@@ -201,6 +209,7 @@ def svm_sampling(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
+    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix SVM with sampling')
 
     # recall = 2/105 e specificity = 3391/3395 -> risultati terribilmente non accettabili
 
@@ -225,6 +234,7 @@ def decisionTree_sampling(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
+    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix Decision Tree with sampling')
 
     if enable_drawing:
         draw_tree("tree-sampling", dizionario['estimator'][0], dataset)
@@ -252,6 +262,7 @@ def randomForest_weighted(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
+    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix Weighted Random Forest')
 
     #recall 10/105, specificity=3118/3118+277
 
@@ -279,6 +290,8 @@ def samples_randomForest(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
+
+    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix Random Forest with Sampling')
     print()
     print('FEATURE IMPORTANCE')
 
@@ -316,6 +329,8 @@ def decisionTreeWithMostImportantFeature(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
+    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix Decision Tree Most Important Features')
+
     if enable_drawing:
         draw_tree("most-important", dizionario['estimator'][0], dataset)
 
@@ -341,6 +356,7 @@ def gaussian_naive(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
+    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matirx Gaussian Naive Bayes')
 
 def gaussian_naive_sampling(dataset):
     dataset = dataset.drop(['L', 'M', 'H'], axis=1)
@@ -362,6 +378,7 @@ def gaussian_naive_sampling(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
+    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix Gaussian Naive Bayes with sampling')
 
 def reteNeurale(dataset):
     dataset = dataset.drop(['L', 'M', 'H'], axis=1)
@@ -384,6 +401,7 @@ def reteNeurale(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
+    plotConfusionMatrix(confusion_matrix(Y_test, Y_pred), 'Confusion Matrix ANN')
 
 
 print('SVM PESATO')
