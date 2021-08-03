@@ -23,8 +23,12 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
+from autosklearn.classification import AutoSklearnClassifier
+import pickle
 
-enable_drawing = False
+
+enable_plot_tree = False
+enable_plot_confusion_matrix = True
 
 #os.environ["PATH"] += os.pathsep + 'C:/Utenti/jed/Anaconda3/envs/keras/Library/bin/graphviz/'
 #LETTURA DATASET
@@ -152,12 +156,13 @@ def decision_treeWeighted(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    if enable_drawing:
+    if enable_plot_tree:
         draw_tree("tree-weighted", dizionario['estimator'][0], dataset)
 
-    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
-    plt.title('Confusion Matrix Weighted Tree')
-    plt.show()
+    if enable_plot_confusion_matrix:
+        plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+        plt.title('Confusion Matrix Weighted Tree')
+        plt.show()
 
     #Risultati ottenuti con cross validazione del modello (PESATO) e calcolo delle prestazioni con matrice di confusione su dati di testing precedentemente separati:
     #Recall circa del 5.7% (sui valori '1') -> valore non eccezionale dato il contesto industriale
@@ -184,9 +189,10 @@ def svm_weighted(dataset):
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
 
-    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
-    plt.title('Confusion Matrix Weighted SVM')
-    plt.show()
+    if enable_plot_confusion_matrix:
+        plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+        plt.title('Confusion Matrix Weighted SVM')
+        plt.show()
 
 
     #recall=0 e specificity=3394/3395 -> risultati non accettabili
@@ -211,9 +217,10 @@ def svm_sampling(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
-    plt.title('Confusion Matrix SVM with Sampling')
-    plt.show()
+    if enable_plot_confusion_matrix:
+        plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+        plt.title('Confusion Matrix SVM with Sampling')
+        plt.show()
 
     # recall = 2/105 e specificity = 3391/3395 -> risultati terribilmente non accettabili
 
@@ -238,11 +245,12 @@ def decisionTree_sampling(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
-    plt.title('Confusion Matrix Decision Tree with sampling')
-    plt.show()
+    if enable_plot_confusion_matrix:
+        plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+        plt.title('Confusion Matrix Decision Tree with sampling')
+        plt.show()
 
-    if enable_drawing:
+    if enable_plot_tree:
         draw_tree("tree-sampling", dizionario['estimator'][0], dataset)
     # Risultati ottenuti con cross validazione del modello allenato su over e undersampling e calcolo delle prestazioni con matrice di confusione su dati di testing precedentemente separati:
     # Recall circa del 8.6% (sui valori '1') -> valore non eccezionale dato il contesto industriale
@@ -268,9 +276,10 @@ def randomForest_weighted(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
-    plt.title('Confusion Matrix Weighted Random Forest')
-    plt.show()
+    if enable_plot_confusion_matrix:
+        plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+        plt.title('Confusion Matrix Weighted Random Forest')
+        plt.show()
 
     #recall 10/105, specificity=3118/3118+277
 
@@ -299,17 +308,18 @@ def samples_randomForest(dataset):
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
 
-    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
-    plt.title('Confusion Matrix Random Forest with sampling')
-    plt.show()
+    if enable_plot_confusion_matrix:
+        plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+        plt.title('Confusion Matrix Random Forest with sampling')
+        plt.show()
     print()
     print('FEATURE IMPORTANCE')
 
     for name, score in zip(dataset.columns, dizionario['estimator'][0].feature_importances_):
         print(name, score)
 
-    plt.hist(dataset.columns, dizionario['estimator'][0].feature_importances_ )
-    plt.show()
+    #plt.hist(dataset.columns, dizionario['estimator'][0].feature_importances_ )
+    #plt.show()
 
     #recall = 5/105, specificity=3039/3039+356 MODELLO MIGLIORE MAI VISTO!!!!
     #The “balanced_subsample” mode is the same as “balanced” except that weights are computed based on the bootstrap sample for every tree grown.
@@ -342,11 +352,12 @@ def decisionTreeWithMostImportantFeature(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
-    plt.title('Confusion Matrix Decision Tree with most important features')
-    plt.show()
+    if enable_plot_confusion_matrix:
+        plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+        plt.title('Confusion Matrix Decision Tree with most important features')
+        plt.show()
 
-    if enable_drawing:
+    if enable_plot_tree:
         draw_tree("most-important", dizionario['estimator'][0], dataset)
 
     # recall=3.81%, specificity=17.67%
@@ -371,9 +382,10 @@ def gaussian_naive(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
-    plt.title('Confusion Matrix Gaussian Naive Bayes')
-    plt.show()
+    if enable_plot_confusion_matrix:
+        plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+        plt.title('Confusion Matrix Gaussian Naive Bayes')
+        plt.show()
 
 def gaussian_naive_sampling(dataset):
     dataset = dataset.drop(['L', 'M', 'H'], axis=1)
@@ -395,9 +407,10 @@ def gaussian_naive_sampling(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
-    plt.title('Confusion Matrix Gaussian Naive Bayes with sampling')
-    plt.show()
+    if enable_plot_confusion_matrix:
+        plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+        plt.title('Confusion Matrix Gaussian Naive Bayes with sampling')
+        plt.show()
 
 def reteNeurale(dataset):
     dataset = dataset.drop(['L', 'M', 'H'], axis=1)
@@ -420,10 +433,43 @@ def reteNeurale(dataset):
     print("FalsePostive: %d" % fp)
     print("FalseNegative: %d" % fn)
     print("TruePositive: %d" % tp)
-    plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
-    plt.title('Confusion Matrix ANN')
-    plt.show()
+    if enable_plot_confusion_matrix:
+        plot_confusion_matrix(dizionario['estimator'][0], X_test, Y_test)
+        plt.title('Confusion Matrix ANN')
+        plt.show()
 
+def auto_sklearn(dataset):
+    dataset = dataset.drop(['L', 'M', 'H'], axis=1)
+    X = dataset.iloc[:, :-1]
+    Y = dataset.iloc[:, -1]
+    X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
+
+    # n_jobs e' buggato
+    autosk = AutoSklearnClassifier(
+            include_preprocessors=["no_preprocessing", ], 
+            exclude_preprocessors=None,
+            memory_limit=3000, 
+    )
+    over = SMOTE(sampling_strategy=0.45, random_state=42)
+    under = RandomUnderSampler(sampling_strategy=0.5, random_state=42)
+    X_train, Y_train = over.fit_resample(X_train, Y_train)
+    X_train, Y_train = under.fit_resample(X_train, Y_train)
+    fname = "auto_sklearn"
+    #autosk.fit(X_train, Y_train)
+    #with open(fname, 'wb') as file:
+        #pickle.dump(autosk, file)
+    with open(fname, "rb") as file:
+        autosk = pickle.load(file)
+    Y_pred = autosk.predict(X_test)
+    tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
+    print("TrueNegative: %d" % tn)
+    print("FalsePostive: %d" % fp)
+    print("FalseNegative: %d" % fn)
+    print("TruePositive: %d" % tp)
+    if enable_plot_confusion_matrix:
+        plot_confusion_matrix(autosk, X_test, Y_test)
+        plt.title('Confusion Matrix AutoSklearn Model')
+        plt.show()
 
 print('SVM PESATO')
 svm_weighted(dataset)
@@ -454,4 +500,7 @@ gaussian_naive_sampling(dataset)
 print()
 print('ARITIFICIAL NEURAL NETWORK')
 reteNeurale(dataset)
+print()
+print('AUTO SKLEARN')
+auto_sklearn(dataset)
 print()
