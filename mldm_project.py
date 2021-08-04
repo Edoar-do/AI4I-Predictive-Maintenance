@@ -23,7 +23,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
-from autosklearn.classification import AutoSklearnClassifier
+#from autosklearn.classification import AutoSklearnClassifier
 import pickle
 
 
@@ -179,7 +179,7 @@ def svm_weighted(dataset):
     # euristica per i pesi dato lo sbilanciamento del dataset
 
     svm = SVC(kernel='rbf', C=float('inf'), gamma=1, class_weight='balanced', random_state=42)
-    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    cv = 5
     dizionario = cross_validate(svm, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
@@ -208,7 +208,7 @@ def svm_sampling(dataset):
     under = RandomUnderSampler(sampling_strategy=0.5, random_state=42)
     X_train, Y_train = over.fit_resample(X_train, Y_train)
     X_train, Y_train = under.fit_resample(X_train, Y_train)
-    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    cv = 5
     dizionario = cross_validate(svm, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
@@ -236,7 +236,7 @@ def decisionTree_sampling(dataset):
     under = RandomUnderSampler(sampling_strategy=0.5, random_state=42)
     X_train, Y_train = over.fit_resample(X_train, Y_train)
     X_train, Y_train = under.fit_resample(X_train, Y_train)
-    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    cv = 5
     dizionario = cross_validate(tree, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
@@ -267,7 +267,7 @@ def randomForest_weighted(dataset):
 
     randomForest = RandomForestClassifier(n_jobs=-1, criterion='entropy', n_estimators=1000, class_weight='balanced_subsample',
                                          random_state=42, max_samples=0.5, max_leaf_nodes=16)
-    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    cv = 5
     dizionario = cross_validate(randomForest, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
@@ -284,7 +284,7 @@ def randomForest_weighted(dataset):
     #recall 10/105, specificity=3118/3118+277
 
 def samples_randomForest(dataset):
-    dataset = dataset.drop(['L', 'M', 'H'], axis=1)
+    dataset = dataset.drop(['L', 'M', 'H'],axis=1)
     X = dataset.iloc[:, :-1]
     Y = dataset.iloc[:, -1]
 
@@ -298,7 +298,7 @@ def samples_randomForest(dataset):
     X_train, Y_train = over.fit_resample(X_train, Y_train)
     X_train, Y_train = under.fit_resample(X_train, Y_train)
 
-    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    cv = 5
     dizionario = cross_validate(randomForest, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
@@ -318,8 +318,7 @@ def samples_randomForest(dataset):
     for name, score in zip(dataset.columns, dizionario['estimator'][0].feature_importances_):
         print(name, score)
 
-    #plt.hist(dataset.columns, dizionario['estimator'][0].feature_importances_ )
-    #plt.show()
+
 
     #recall = 5/105, specificity=3039/3039+356 MODELLO MIGLIORE MAI VISTO!!!!
     #The “balanced_subsample” mode is the same as “balanced” except that weights are computed based on the bootstrap sample for every tree grown.
@@ -343,7 +342,7 @@ def decisionTreeWithMostImportantFeature(dataset):
 
     tree = DecisionTreeClassifier(max_depth=4, class_weight='balanced', criterion='entropy', random_state=42,
                                   min_samples_leaf=30)
-    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    cv = 5
     dizionario = cross_validate(tree, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
@@ -373,7 +372,7 @@ def gaussian_naive(dataset):
     X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
 
     naive = GaussianNB()
-    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    cv = 5
     dizionario = cross_validate(naive, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
@@ -398,7 +397,7 @@ def gaussian_naive_sampling(dataset):
     under = RandomUnderSampler(sampling_strategy=0.5, random_state=42)
     X_train, Y_train = over.fit_resample(X_train, Y_train)
     X_train, Y_train = under.fit_resample(X_train, Y_train)
-    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    cv = 5
     dizionario = cross_validate(naive, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
@@ -424,7 +423,7 @@ def reteNeurale(dataset):
     X_train, Y_train = under.fit_resample(X_train, Y_train)
 
     ann = MLPClassifier(solver='adam', validation_fraction=0.25, early_stopping=True, activation='relu', learning_rate='adaptive', n_iter_no_change=10,  random_state=42, alpha=1e-6, max_iter=500)
-    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=42)
+    cv = 5
     dizionario = cross_validate(ann, X_train, Y_train, cv=cv, n_jobs=-1, scoring='recall', return_estimator=True)
 
     Y_pred = dizionario['estimator'][0].predict(X_test)
@@ -438,69 +437,72 @@ def reteNeurale(dataset):
         plt.title('Confusion Matrix ANN')
         plt.show()
 
-def auto_sklearn(dataset):
-    dataset = dataset.drop(['L', 'M', 'H'], axis=1)
-    X = dataset.iloc[:, :-1]
-    Y = dataset.iloc[:, -1]
-    X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
+# def auto_sklearn(dataset):
+#     dataset = dataset.drop(['L', 'M', 'H'], axis=1)
+#     X = dataset.iloc[:, :-1]
+#     Y = dataset.iloc[:, -1]
+#     X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
+#
+#     # n_jobs e' buggato
+#     autosk = AutoSklearnClassifier(
+#             include_preprocessors=["no_preprocessing", ],
+#             exclude_preprocessors=None,
+#             memory_limit=3000,
+#     )
+#     over = SMOTE(sampling_strategy=0.45, random_state=42)
+#     under = RandomUnderSampler(sampling_strategy=0.5, random_state=42)
+#     X_train, Y_train = over.fit_resample(X_train, Y_train)
+#     X_train, Y_train = under.fit_resample(X_train, Y_train)
+#     fname = "auto_sklearn"
+#     #autosk.fit(X_train, Y_train)
+#     #with open(fname, 'wb') as file:
+#         #pickle.dump(autosk, file)
+#     with open(fname, "rb") as file:
+#         autosk = pickle.load(file)
+#     Y_pred = autosk.predict(X_test)
+#     tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
+#     print("TrueNegative: %d" % tn)
+#     print("FalsePostive: %d" % fp)
+#     print("FalseNegative: %d" % fn)
+#     print("TruePositive: %d" % tp)
+#     if enable_plot_confusion_matrix:
+#         plot_confusion_matrix(autosk, X_test, Y_test)
+#         plt.title('Confusion Matrix AutoSklearn Model')
+#         plt.show()
 
-    # n_jobs e' buggato
-    autosk = AutoSklearnClassifier(
-            include_preprocessors=["no_preprocessing", ], 
-            exclude_preprocessors=None,
-            memory_limit=3000, 
-    )
-    over = SMOTE(sampling_strategy=0.45, random_state=42)
-    under = RandomUnderSampler(sampling_strategy=0.5, random_state=42)
-    X_train, Y_train = over.fit_resample(X_train, Y_train)
-    X_train, Y_train = under.fit_resample(X_train, Y_train)
-    fname = "auto_sklearn"
-    #autosk.fit(X_train, Y_train)
-    #with open(fname, 'wb') as file:
-        #pickle.dump(autosk, file)
-    with open(fname, "rb") as file:
-        autosk = pickle.load(file)
-    Y_pred = autosk.predict(X_test)
-    tn, fp, fn, tp = confusion_matrix(Y_test, Y_pred).ravel()
-    print("TrueNegative: %d" % tn)
-    print("FalsePostive: %d" % fp)
-    print("FalseNegative: %d" % fn)
-    print("TruePositive: %d" % tp)
-    if enable_plot_confusion_matrix:
-        plot_confusion_matrix(autosk, X_test, Y_test)
-        plt.title('Confusion Matrix AutoSklearn Model')
-        plt.show()
-
-print('SVM PESATO')
-svm_weighted(dataset)
-print()
-print('SVM CON SAMPLING')
-svm_sampling(dataset)
-print()
-print('DECISION TREE PESATO')
-decision_treeWeighted(dataset)
-print()
-print('DECISION TREE WITH SAMPLING')
-decisionTree_sampling(dataset)
-print()
-print('RANDOM FOREST PESATA')
-randomForest_weighted(dataset)
-print()
+# print('DECISION TREE PESATO')
+# decision_treeWeighted(dataset)
+# print()
+# print('DECISION TREE WITH SAMPLING')
+# decisionTree_sampling(dataset)
+# print()
+# print('SVM PESATO')
+# svm_weighted(dataset)
+# print()
+# print('SVM CON SAMPLING')
+# svm_sampling(dataset)
+# print()
+# print("NAIVE BAYES GAUSSIAN CLASSIFIER")
+# gaussian_naive(dataset)
+# print()
+# print("NAIVE BAYES GAUSSIAN CLASSIFIER WITH SAMPLING")
+# gaussian_naive_sampling(dataset)
+# print()
+# print('ARITIFICIAL NEURAL NETWORK')
+# reteNeurale(dataset)
+# print()
+# print('RANDOM FOREST PESATA')
+# randomForest_weighted(dataset)
+# print()
 print('RANDOM FOREST WITH SAMPLING')
 samples_randomForest(dataset)
 print()
 print('MOST IMPORTANT FEATURE WEIGHTED DECISION TREE')
 decisionTreeWithMostImportantFeature(dataset)
 print()
-print("NAIVE BAYES GAUSSIAN CLASSIFIER")
-gaussian_naive(dataset)
-print()
-print("NAIVE BAYES GAUSSIAN CLASSIFIER WITH SAMPLING")
-gaussian_naive_sampling(dataset)
-print()
-print('ARITIFICIAL NEURAL NETWORK')
-reteNeurale(dataset)
-print()
-print('AUTO SKLEARN')
-auto_sklearn(dataset)
-print()
+
+
+
+# print('AUTO SKLEARN')
+# auto_sklearn(dataset)
+# print()
