@@ -1,4 +1,3 @@
-#IMPORTAZIONI VARIE
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -31,11 +30,10 @@ enable_plot_tree = False
 enable_plot_confusion_matrix = True
 
 #os.environ["PATH"] += os.pathsep + 'C:/Utenti/jed/Anaconda3/envs/keras/Library/bin/graphviz/'
-#LETTURA DATASET
 dataset = pd.read_csv('ai4i2020.csv')
 
 #DATA ANALYSIS:
-#riduzione dimensionalità: tolgo feature inutili in partenza per gli scopi del progetto
+## dimensionality reduction
 dataset.drop("Product ID", axis=1, inplace=True)
 dataset.drop("UDI", axis=1, inplace=True)
 dataset.drop("TWF", axis=1, inplace=True)
@@ -44,14 +42,12 @@ dataset.drop("PWF", axis=1, inplace=True)
 dataset.drop("OSF", axis=1, inplace=True)
 dataset.drop("RNF", axis=1, inplace=True)
 
-#Non ci sono valori NaN, undefined o null all'interno del dataset. Non occorre fare una ricerca perché la loro assenza
-#è certificata dalla descrizione del dataset fornita dall'autore dell'articolo
+# Checking for NaN values in the dataset can be skipped, as certified by dataset owners
 
-#Togliere i duplicati nel dataset senza considerare la label Machine Failure (per vedere se ci sono record discordi)
+# Since data comes from industrial data collection, is it possible to have non-informative duplicates
 pd.DataFrame.drop_duplicates(dataset, subset=dataset.columns.difference(['Machine failure']), inplace=True)
-#--> non ci sono proprio record duplicati
 
-#one hot encoding dei valori L, M, H dell'attributo Type
+#one hot encoding of categorical feature
 one_hot = pd.get_dummies(dataset['Type'])
 dataset = dataset.drop('Type', axis=1)
 last = dataset.iloc[:, -1]
@@ -59,39 +55,29 @@ dataset = dataset.drop('Machine failure', axis = 1)
 dataset = dataset.join(one_hot)
 dataset = dataset.join(last)
 
-#CORRELAZIONI TRA FEATURE
+#searching for strong correlation in order to reduce dimensionality once again
 
 #pd.plotting.scatter_matrix(dataset.drop(['L', 'M', 'H', 'Machine failure'], axis=1, inplace=False), figsize=(14,22))
 #plt.show()
 
-#sembra esserci una correlazione tra air temperature e process temperature e infatti è così sicché process temperature è
-#calcolata a partire da air temperature e una correlazione inversa tra rotational speed e torque (infatti sono inversamente proporzionali)
+#strong positibe correlation between air temperature e process temperature 
+#strong negative correlation between rotational speed e torque
 
 #plt.figure(figsize=(16, 6))
 #heatmap = sns.heatmap(dataset.drop(['L', 'M', 'H', 'Machine failure'], axis=1, inplace=False).corr(), vmin=-1, vmax=1, annot=True)
 #heatmap.set_title('Correlation Heatmap')
 #plt.show()
 
-#visualizzazione per cercare eventuali outliers
-#Avendo i record più di 3 dimensioni, tutte importanti per individuarli, non possono essere stampati
-#Analizzo le eventuali anomalie nelle singole feature
-
-#dataset.drop(['L', 'M', 'H', 'Machine failure'], axis=1, inplace=False).plot(subplots=True, figsize=(16,6))
-#plt.show()
-#--> non ci sono anomalie nei valori delle singole feature
-
-
 #############################################
 
-# ADDESTRAMENTO DI ALCUNI MODELLI
+# TRAINING SOME MODELS
 
-#1. Albero di decisione
-#2. Rete neurale
+#1. decision tree
+#2. MLP
 #3. SVM
 #4. RandomForest
-#5. Bayes naive (non c'è la condizionale indipendenza tra attributi -process temperature dipende da air temperature- ma i risultati potrebbero comunque essere buoni.
-#nel caso si prova a togliere una delle due e vedere i risultati)
-#6. eventuali altri modelli...
+#5. Bayes naive (there is no conditional independence between features but results might be good. If not, we can remove one of two correlated features and try again
+#6. possible other models
 
 
 PROJECT_ROOT_DIR = "."
@@ -131,17 +117,17 @@ def train_test_split_standard_scaler(X, Y, train_size, random_state):
     return (X_train, X_test, Y_train, Y_test)
 
 def decision_treeWeighted(dataset):
-    # Costruisco il dataset negli input e nei target che serviranno per l'addestramento
+    # I build the dataset into the inputs and targets that will be used for training.
 
-    dataset = dataset.drop(['L', 'M', 'H'], axis = 1) # non venivano mai considerati nell'albero (ce ne siamo accorti dopo alcune prove)
+    dataset = dataset.drop(['L', 'M', 'H'], axis = 1) # were never considered in the tree (we realized this after some trials)
     X = dataset.iloc[:, :-1]
     Y = dataset.iloc[:, -1]
 
     # split data
     X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size = 0.65, random_state = 42)
 
-    # albero di decisione
-    # euristica per i pesi dato lo sbilanciamento del dataset
+    # decision tree
+    # heuristics for weights given the unbalanced dataset
 
     #nonfailure_count, failure_count = dataset.groupby('Machine failure').size()
     #ratio = nonfailure_count / failure_count
@@ -164,19 +150,19 @@ def decision_treeWeighted(dataset):
         plt.title('Confusion Matrix Weighted Tree')
         plt.show()
 
-    #Risultati ottenuti con cross validazione del modello (PESATO) e calcolo delle prestazioni con matrice di confusione su dati di testing precedentemente separati:
-    #Recall circa del 5.7% (sui valori '1') -> valore non eccezionale dato il contesto industriale
-    #Specificity circa del 9.34
+    #Results obtained with model cross validation (WEIGHTED) and performance calculation with confusion matrix on previously separated testing data:
+    #Recall about 5.7% (on '1' values) -> not an exceptional value given the industrial context
+    #Specificity about 9.34
 
 def svm_weighted(dataset):
-    dataset = dataset.drop(['L', 'M', 'H'], axis=1)  # non venivano mai considerati nell'albero (ce ne siamo accorti dopo alcune prove)
+    dataset = dataset.drop(['L', 'M', 'H'], axis=1)  # were never considered in the tree (we realized this after some trials)
     X = dataset.iloc[:, :-1]
     Y = dataset.iloc[:, -1]
 
     # split data
     X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
 
-    # euristica per i pesi dato lo sbilanciamento del dataset
+    # heuristics for weights given the unbalanced dataset.
 
     svm = SVC(kernel='rbf', C=float('inf'), gamma=1, class_weight='balanced', random_state=42)
     cv = 5
@@ -222,7 +208,7 @@ def svm_sampling(dataset):
         plt.title('Confusion Matrix SVM with Sampling')
         plt.show()
 
-    # recall = 2/105 e specificity = 3391/3395 -> risultati terribilmente non accettabili
+    # recall = 2/105 and specificity = 3391/3395 -> terribly unacceptable results
 
 def decisionTree_sampling(dataset):
     dataset = dataset.drop(['L', 'M', 'H'], axis=1)
@@ -252,10 +238,10 @@ def decisionTree_sampling(dataset):
 
     if enable_plot_tree:
         draw_tree("tree-sampling", dizionario['estimator'][0], dataset)
-    # Risultati ottenuti con cross validazione del modello allenato su over e undersampling e calcolo delle prestazioni con matrice di confusione su dati di testing precedentemente separati:
-    # Recall circa del 8.6% (sui valori '1') -> valore non eccezionale dato il contesto industriale
-    # Specificity circa del 9.2%
-    #Siccome quello che conta è la recall e non la specificity in questo contesto, l'albero di decisione coi pesi è migliore di quello con over-under sampling
+    # Results obtained by cross validation of model trained on over and undersampling and performance calculation with confusion matrix on previously separated testing data:
+    # Recall about 8.6% (on '1' values) -> not an exceptional value given the industrial context.
+    # Specificity about 9.2%
+    #Since what matters is recall and not specificity in this context, the decision tree with weights is better than the one with over-under sampling
 
 def randomForest_weighted(dataset):
     dataset = dataset.drop(['L', 'M', 'H'], axis=1)
@@ -324,17 +310,18 @@ def samples_randomForest(dataset):
     #The “balanced_subsample” mode is the same as “balanced” except that weights are computed based on the bootstrap sample for every tree grown.
 
 def decisionTreeWithMostImportantFeature(dataset):
-    # Costruisco il dataset negli input e nei target che serviranno per l'addestramento
+    #I build the dataset into the inputs and targets that will be used for training
 
-    dataset = dataset.drop(['L', 'M', 'H', 'Air temperature [K]', 'Process temperature [K]'],axis=1)  # non venivano mai considerati nell'albero (ce ne siamo accorti dopo alcune prove)
+    dataset = dataset.drop(['L', 'M', 'H', 'Air temperature [K]', 'Process temperature [K]'],axis=1)  # they were never considered in the tree (we realized this after a few trials)
     X = dataset.iloc[:, :-1]
     Y = dataset.iloc[:, -1]
 
     # split data
     X_train, X_test, Y_train, Y_test = train_test_split_standard_scaler(X, Y, train_size=0.65, random_state=42)
 
-    # albero d) decisione
-    # euristica per i pesi dato lo sbilanciamento del dataset
+    # tree (d) decision
+    # heuristics for weights given the unbalanced dataset
+
 
     # nonfailure_count, failure_count = dataset.groupby('Machine failure').size()
     # ratio = nonfailure_count / failure_count
@@ -360,11 +347,11 @@ def decisionTreeWithMostImportantFeature(dataset):
         draw_tree("most-important", dizionario['estimator'][0], dataset)
 
     # recall=3.81%, specificity=17.67%
-    # grazie alla random forest con samples abbiamo trovato le feature più importanti e adesso le abbiamo usate per allenare un modello semplicissimo come un albero
-    # per vedere se ci sono stati miglioramenti delle prestazioni e così è stato.
+    # thanks to random forest with samples we found the most important features and now we used them to train a very simple model like a tree
+    # to see if there were any performance improvements, and there were.
 
 def gaussian_naive(dataset):
-    dataset = dataset.drop(['L', 'M', 'H'], axis=1)  # non venivano mai considerati nell'albero (ce ne siamo accorti dopo alcune prove)
+    dataset = dataset.drop(['L', 'M', 'H'], axis=1)  # were never considered in the tree (we realized this after some trials)
     X = dataset.iloc[:, :-1]
     Y = dataset.iloc[:, -1]
 
